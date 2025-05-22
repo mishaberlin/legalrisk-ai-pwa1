@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LegalRisk AI</title>
+  <script src="https://cdn.tailwindcss.com "></script>
+  <script src="https://unpkg.com/react @18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom @18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/ @babel/standalone/babel.min.js"></script>
+
+  <!-- Polyfill -->
+  <script>
+    if (typeof TextEncoder === 'undefined') {
+      document.write('<script src="https://polyfill.io/v3/polyfill.min.js?features=TextEncoder%2CTextDecoder "><\/script>')
+    }
+  </script>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta name="theme-color" content="#6366F1" />
+  <meta name="description" content="AI-анализ договоров для выявления рисков" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+  <header class="bg-white shadow-sm border-b border-gray-200 py-4 px-6 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-indigo-600">LegalRisk AI</h1>
+    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">PWA</span>
+  </header>
+
+  <main id="root" class="flex-grow container mx-auto p-4 max-w-lg"></main>
+
+  <footer class="py-4 bg-white border-t border-gray-200 text-center text-sm text-gray-500">
+    © {{ new Date().getFullYear() }} LegalRisk AI — MVP Прототип
+  </footer>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      const [screen, setScreen] = useState('dashboard');
+      const [contracts, setContracts] = useState([
+        { id: 1, name: "Договор аренды", date: "2024-11-01", riskScore: 85 },
+        { id: 2, name: "Договор подряда", date: "2024-11-03", riskScore: 45 },
+        { id: 3, name: "Договор поставки", date: "2024-11-05", riskScore: 65 }
+      ]);
+      const [selectedContract, setSelectedContract] = useState(null);
+      const [user] = useState({
+        name: "Алексей",
+        email: "alex@example.com",
+        role: "Юрист"
+      });
+
+      const mockAnalysis = {
+        clauses: [
+          { title: "Срок аренды", riskLevel: "Высокий", description: "Срок аренды указан как 1 месяц вместо минимальных 6 месяцев.", suggestions: ["Увеличить срок аренды", "Добавить условие продления"] },
+          { title: "Штрафы", riskLevel: "Средний", description: "Нет ограничений штрафа за досрочное расторжение.", suggestions: ["Добавить лимит штрафа до 50% от суммы договора"] },
+          { title: "Форс-мажор", riskLevel: "Отсутствует", description: "Не указаны условия форс-мажора", suggestions: ["Добавить раздел о форс-мажоре"] },
+          { title: "GDPR", riskLevel: "Критический", description: "Нарушение требований GDPR в международном договоре", suggestions: ["Добавить пункт о конфиденциальности данных", "Обновить политику хранения персональных данных"] }
+        ]
+      };
+
+      return (
+        <div className="w-full">
+          {/* Навигация */}
+          <nav className="flex justify-around mt-4 mb-6 border-t border-gray-200 pt-2">
+            <button onClick={() => setScreen('dashboard')} className={`font-medium ${screen === 'dashboard' ? 'text-indigo-600' : 'hover:text-indigo-500'}`}>
+              Панель
+            </button>
+            <button onClick={() => setScreen('upload')} className={`font-medium ${screen === 'upload' ? 'text-indigo-600' : 'hover:text-indigo-500'}`}>
+              Загрузить
+            </button>
+            <button onClick={() => setScreen('analysis')} className={`font-medium ${screen === 'analysis' ? 'text-indigo-600' : 'hover:text-indigo-500'}`}>
+              Анализ
+            </button>
+            <button onClick={() => setScreen('profile')} className={`font-medium ${screen === 'profile' ? 'text-indigo-600' : 'hover:text-indigo-500'}`}>
+              Профиль
+            </button>
+          </nav>
+
+          {/* Страницы */}
+          {screen === 'dashboard' && (
+            <div>
+              <h2 className="text-xl font-bold mb-4">Панель рисков</h2>
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="p-4 bg-white shadow rounded-md">
+                  <p className="text-sm text-gray-500">Всего контрактов</p>
+                  <h3 className="text-2xl font-bold">{contracts.length}</h3>
+                </div>
+                <div className="p-4 bg-white shadow rounded-md">
+                  <p className="text-sm text-gray-500">Высокий риск</p>
+                  <h3 className="text-2xl font-bold text-red-600">{contracts.filter(c => c.riskScore > 75).length}</h3>
+                </div>
+              </div>
+
+              <div className="bg-white shadow rounded-lg overflow-hidden">
+                <table className="min-w-full table-auto">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Название</th>
+                      <th className="px-4 py-2 text-left">Дата</th>
+                      <th className="px-4 py-2 text-left">Риск</th>
+                      <th className="px-4 py-2 text-right">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {contracts.map(contract => (
+                      <tr key={contract.id} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-2 font-medium">{contract.name}</td>
+                        <td className="px-4 py-2 text-sm">{contract.date}</td>
+                        <td className="px-4 py-2 text-sm">
+                          <span className={`inline-block px-2 py-1 rounded-full text-xs ${
+                            contract.riskScore > 75 ? 'bg-red-100 text-red-800' :
+                            contract.riskScore > 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {contract.riskScore}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 text-right">
+                          <button onClick={() => setSelectedContract(contract)} className="text-indigo-600 hover:text-indigo-800">
+                            Подробнее
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {screen === 'upload' && (
+            <div>
+              <h2 className="text-xl font-bold mb-4">Загрузите договор</h2>
+              <div className="border-dashed border-2 border-indigo-500 p-8 text-center rounded mb-4 cursor-pointer"
+                   onClick={() => alert("Функция загрузки временно недоступна")}>
+                <p className="text-indigo-600 font-medium">Выберите файл</p>
+                <p className="text-sm text-gray-500 mt-2">PDF, DOCX, TXT до 20 МБ</p>
+              </div>
+              <button onClick={() => alert("Функция временно недоступна")} className="w-full border border-gray-300 p-3 text-center">
+                Сканировать с камеры
+              </button>
+            </div>
+          )}
+
+          {screen === 'analysis' && selectedContract && (
+            <div>
+              <h2 className="text-xl font-bold mb-4">Анализ договора</h2>
+              <p className="mb-4 font-semibold">{selectedContract.name}</p>
+
+              <h3 className="text-lg font-semibold mt-6 mb-2">🔍 Обнаруженные отличия:</h3>
+              {mockAnalysis.clauses.map((cl, idx) => (
+                <div key={idx} className="p-4 bg-gray-100 rounded-md mb-3">
+                  <strong>{cl.title}</strong> —{' '}
+                  <span className={
+                    cl.riskLevel === 'Высокий' ? 'text-red-600' :
+                    cl.riskLevel === 'Средний' ? 'text-yellow-600' :
+                    cl.riskLevel === 'Критический' ? 'text-red-700' : 'text-green-600'
+                  }>
+                    {cl.riskLevel}
+                  </span>
+                  <p className="mt-1 text-sm text-gray-600">{cl.description}</p>
+                  <ul className="mt-2 text-sm text-gray-600">
+                    {cl.suggestions.map((suggestion, i) => (
+                      <li key={i}>• {suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              <button onClick={() => setScreen('dashboard')} className="mt-4 w-full bg-indigo-600 text-white p-3 rounded-md">
+                Назад
+              </button>
+            </div>
+          )}
+
+          {screen === 'profile' && (
+            <div>
+              <h2 className="text-xl font-bold mb-4">Профиль пользователя</h2>
+              <div className="p-4 bg-white shadow rounded-md mb-4">
+                <p><strong>Имя:</strong> {user.name}</p>
+                <p><strong>Email:</strong> {user.email}</p>
+                <p><strong>Роль:</strong> {user.role}</p>
+              </div>
+
+              <div className="p-4 bg-white shadow rounded-md">
+                <h3 className="font-semibold mb-2">Настройки</h3>
+                <label className="block mb-4">
+                  Темная тема:
+                  <select className="ml-2 border border-gray-300 rounded p-1">
+                    <option>Светлая</option>
+                    <option>Темная</option>
+                  </select>
+                </label>
+                <button onClick={() => alert("В разработке")} className="w-full border border-gray-300 p-2 rounded">
+                  Сменить пароль
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
